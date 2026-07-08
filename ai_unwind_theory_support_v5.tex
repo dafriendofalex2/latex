@@ -1,0 +1,647 @@
+\documentclass[11pt]{article}
+
+\begin{document}
+
+\title{Theory Note for the AI Unwind Stress Framework\\Factor Orthogonalization, Absolute Stress, and Valuation-Calibrated Severity}
+\author{Alex Zhang}
+\date{July 2026}
+\maketitle
+
+\section*{Executive summary}
+
+This note gives the theoretical foundation behind the v5 AI unwind stress report. The key point is simple but important: orthogonalization is still useful, but it should not be used as the production crash shock by itself. It is a diagnostic and identification tool. The production stress vector should instead be an absolute adverse-stress operator:
+\[
+\widehat R_j^s = \beta_j^W S_W^s + I_j^{AI} S_{AI,X}^s,
+\]
+where $j$ is a country-industry cell or single stock, $\beta_j^W$ is market-beta exposure, $S_W^s$ is the broad equity-market shock, $I_j^{AI}$ is non-negative AI-excess vulnerability, and $S_{AI,X}^s$ is the AI-excess shock under scenario $s$.
+
+The orthogonalized AI factor answers a relative-performance question: after removing the global equity market, which assets behaved like AI winners or AI laggards? That question is useful for diagnostics, but it is not the same as the risk question. The risk question is: conditional on an AI-led equity unwind, what absolute return shock should be applied to a position book? A negative residual AI beta may mean an asset historically outperformed AI after controlling for the market. It does not mean that asset should receive a positive return in an adverse equity stress.
+
+The v5 theory therefore separates three objects:
+\[
+\begin{array}{lll}
+\hbox{1. Orthogonalized residual AI factor} &:& \hbox{relative diagnostic;}\\
+\hbox{2. Absolute AI-excess vulnerability} &:& \hbox{non-negative stress exposure;}\\
+\hbox{3. Valuation severity scalar} &:& \hbox{calibrates base-case shock size.}
+\end{array}
+\]
+This structure is more rigorous than using a raw AI beta, because it avoids double-counting the market. It is also safer than using a signed residual beta directly, because it prevents a risk file from giving mechanical crash gains to assets that merely behaved like relative hedges in the estimation sample.
+
+\tableofcontents
+
+\section{Model objective}
+
+The model is a conditional stress model, not a forecasting model. It does not estimate the probability, timing, or catalyst of an AI crash. It answers a narrower question:
+\[
+\hbox{If an AI-led equity unwind occurs, what return vector should be used for stress testing?}
+\]
+
+Let there be $N$ stressable objects. A stressable object can be a country-industry cell, a broad country index, an industry proxy, or a single-stock override. For each object $j=1,\ldots,N$ and each scenario $s$, the output is a log-return shock
+\[
+\widehat R_j^s.
+\]
+The vector of scenario shocks is
+\[
+\widehat R^s = (\widehat R_1^s,\widehat R_2^s,\ldots,\widehat R_N^s)'.
+\]
+The object of the model is not the expected return vector $E[R]$. It is a severe but interpretable conditional vector. This distinction matters because a stress model should be judged by economic coherence, conservative directionality, and auditability, not by short-horizon prediction accuracy.
+
+\section{Return units}
+
+The model is written in log returns. If $P_{j,t}$ is the month-end price of object $j$, then
+\[
+r_{j,t}=\log P_{j,t}-\log P_{j,t-1}.
+\]
+Log returns are used because scenario components can be added cleanly. If the log stress return is $\widehat R_j^s$, the simple return used for P\&L is
+\[
+\widehat r_j^s=\exp(\widehat R_j^s)-1.
+\]
+For a position with signed market value $x_i$, where long positions have $x_i>0$ and short positions have $x_i<0$, stress P\&L is
+\[
+\mathrm{PnL}_i^s=-x_i\widehat r_i^s.
+\]
+The adverse loss contribution is
+\[
+L_i^s=\max\{\mathrm{PnL}_i^s,0\}.
+\]
+This convention means a long position loses money when the stressed return is negative. A short position loses money when the stressed return is positive.
+
+\section{Why the raw AI factor is not enough}
+
+Let $r_{A,t}$ denote the return of a raw AI basket. This basket can be built from public proxies such as semiconductor, software, cloud, AI thematic, and robotics ETFs. The raw basket is useful because it represents the observable AI equity theme. However, it is not a pure AI factor. It contains ordinary market exposure.
+
+A raw AI basket can rise partly because AI stocks are repricing upward, but also partly because the entire equity market is rising. If one uses the raw AI basket directly alongside a market factor, the same market movement can be counted twice. If one uses only the raw AI basket, non-AI market exposure is not represented cleanly. Therefore the model needs a decomposition.
+
+The desired stress decomposition is
+\[
+\hbox{absolute equity stress}=
+\hbox{broad market stress}+\hbox{incremental AI-excess stress}.
+\]
+This requires separating market beta from AI-specific vulnerability.
+
+\section{Orthogonalization as projection}
+
+Orthogonalization is the clean way to separate a raw thematic basket into a market component and a residual component.
+
+For a sample $t=1,\ldots,T$, define the empirical inner product between two centered return series $x$ and $y$ as
+\[
+\langle x,y\rangle_T
+=
+{1\over T}\sum_{t=1}^T (x_t-\overline x)(y_t-\overline y).
+\]
+The one-factor projection of the raw AI basket on the world market is
+\[
+r_{A,t}=a_A+b_A r_{W,t}+u_{A,t},
+\]
+where $r_{W,t}$ is the global equity-market return. The residual is
+\[
+f_{AI,t}^{res}=u_{A,t}.
+\]
+By ordinary least squares, the residual satisfies
+\[
+\langle f_{AI}^{res},r_W\rangle_T=0.
+\]
+This is the mathematical meaning of a world-neutral AI factor: in sample, it has zero linear exposure to the world market.
+
+\subsection*{Proposition 1: orthogonalization removes first-order market exposure}
+
+Let $b_A$ be chosen by least squares:
+\[
+b_A={\langle r_A,r_W\rangle_T\over \langle r_W,r_W\rangle_T}.
+\]
+Define
+\[
+f_{AI}^{res}=r_A-\overline r_A-b_A(r_W-\overline r_W).
+\]
+Then
+\[
+\langle f_{AI}^{res},r_W\rangle_T=0.
+\]
+
+\subsection*{Reason}
+
+Substituting the definition gives
+\[
+\langle f_{AI}^{res},r_W\rangle_T
+=
+\langle r_A,r_W\rangle_T
+-b_A\langle r_W,r_W\rangle_T=0.
+\]
+Therefore the residual is the part of the AI basket that cannot be linearly explained by the market over the estimation sample.
+
+\section{What the residual AI factor means}
+
+For an asset or cell $j$, a relative AI regression is
+\[
+r_{j,t}=a_j+\beta_j^W r_{W,t}+\gamma_j^{res}f_{AI,t}^{res}+\epsilon_{j,t}.
+\]
+Here $\gamma_j^{res}$ answers a relative question:
+\[
+\hbox{after controlling for the market, does object }j\hbox{ behave like an AI winner or AI laggard?}
+\]
+
+If $\gamma_j^{res}>0$, object $j$ historically had positive relative co-movement with the AI factor. If $\gamma_j^{res}<0$, object $j$ historically behaved like a relative hedge or relative laggard to the AI factor. That is valuable information. It should be retained as a diagnostic.
+
+But it is not the production stress return. The sign of $\gamma_j^{res}$ does not by itself decide whether $j$ should gain or lose in an absolute crash.
+
+\subsection*{Proposition 2: a negative residual beta is not an absolute crash gain}
+
+Suppose a stress scenario has a market shock $S_W<0$ and an AI residual shock $S_{res}<0$. A signed residual model would produce
+\[
+\widehat R_j^{signed}=\beta_j^W S_W+\gamma_j^{res}S_{res}.
+\]
+If $\gamma_j^{res}<0$, then $\gamma_j^{res}S_{res}>0$. Thus the residual term gives a positive contribution during an AI residual crash.
+
+This is not mathematically wrong. It means the object is expected to outperform the market-relative AI basket. But it is not necessarily acceptable for an adverse stress vector, because the same object can still lose money through the market term $\beta_j^W S_W$.
+
+The practical problem appears when the positive residual term is large enough to offset the market loss. Then the stress file can show positive crash returns for defensive sectors, non-US indices, energy, utilities, or real assets. That is a relative-rotation statement being misused as an absolute-loss statement.
+
+\section{Stress factor versus diagnostic factor}
+
+The model must separate two concepts.
+
+First, the diagnostic factor is the world-neutral residual:
+\[
+f_{AI,t}^{res}=r_{A,t}-\widehat a_A-\widehat b_A r_{W,t}.
+\]
+This is useful for identifying relative AI winners and laggards.
+
+Second, the production stress factor is the AI-excess scenario shock:
+\[
+S_{AI,X}^s.
+\]
+This is not simply the one-month residual $f_{AI,t}^{res}$. It is a scenario component calibrated from a historical bubble unwind and then scaled by valuation evidence.
+
+The diagnostic factor is estimated from observed returns. The stress factor is a governed scenario. Confusing these two objects was the core methodological problem in earlier versions.
+
+\section{Absolute stress operator}
+
+The v5 production stress operator is
+\[
+\widehat R_j^s=\beta_j^W S_W^s+I_j^{AI}S_{AI,X}^s.
+\]
+The components are:
+\[
+\begin{array}{ll}
+\beta_j^W & \hbox{market beta of object }j,\\
+S_W^s & \hbox{broad equity-market shock in scenario }s,\\
+I_j^{AI} & \hbox{non-negative AI-excess vulnerability of object }j,\\
+S_{AI,X}^s & \hbox{incremental AI-excess shock in scenario }s.
+\end{array}
+\]
+The key restriction is
+\[
+I_j^{AI}\geq 0.
+\]
+This is the no-benefit-credit rule. The model may report negative residual AI beta as a diagnostic, but it does not allow negative AI vulnerability to create mechanical gains inside the primary adverse stress vector.
+
+\subsection*{Proposition 3: the primary operator is monotone adverse}
+
+Assume
+\[
+S_W^s\leq 0,\qquad S_{AI,X}^s\leq 0,
+\]
+and
+\[
+\beta_j^W\geq 0,
+\qquad I_j^{AI}\geq 0.
+\]
+Then
+\[
+\widehat R_j^s\leq 0.
+\]
+Also, if object $k$ has at least as much market beta and AI vulnerability as object $j$,
+\[
+\beta_k^W\geq \beta_j^W,
+\qquad I_k^{AI}\geq I_j^{AI},
+\]
+then
+\[
+\widehat R_k^s\leq \widehat R_j^s.
+\]
+
+\subsection*{Reason}
+
+Both stress shocks are non-positive. Increasing a non-negative exposure to a non-positive shock makes the return weakly more negative. Therefore the operator is directionally coherent for an adverse equity stress.
+
+This property is precisely what the signed residual model lacked. The signed model can be useful for research, but it is not monotone adverse if residual betas can be negative.
+
+\section{Constructing AI-excess vulnerability}
+
+The model needs a non-negative scalar $I_j^{AI}$ for each object $j$. It should be high for AI epicenter names and AI-linked industries. It should be lower for broad markets and unrelated sectors. It should not be negative.
+
+The v5 construction uses both statistical and economic information.
+
+\subsection{Statistical intensity from absolute co-movement}
+
+Let $\theta_j^{abs}$ be the estimated absolute co-movement beta of object $j$ to the raw AI basket:
+\[
+r_{j,t}=c_j+\theta_j^{abs}r_{A,t}+e_{j,t}.
+\]
+This is not yet the final AI intensity, because a broad market index can co-move with the raw AI basket just because both contain market risk.
+
+Let $\theta_W^{abs}$ be the world market's own co-movement with the raw AI basket. The beta-adjusted decomposition is
+\[
+\theta_j^{abs}\approx \beta_j^W\theta_W^{abs}+I_j^{stat}(1-\theta_W^{abs}).
+\]
+Solving for the statistical AI-excess intensity gives
+\[
+I_j^{stat,raw}
+=
+{\theta_j^{abs}-\beta_j^W\theta_W^{abs}\over 1-\theta_W^{abs}}.
+\]
+The production statistical intensity is clipped:
+\[
+I_j^{stat}=\min\{I_{max},\max\{0,I_j^{stat,raw}\}\}.
+\]
+This formula has a useful interpretation. If object $j$ only moves with the AI basket because it has ordinary market beta, then
+\[
+\theta_j^{abs}\approx \beta_j^W\theta_W^{abs},
+\]
+so
+\[
+I_j^{stat}\approx 0.
+\]
+If object $j$ co-moves with the AI basket more than can be explained by market beta, then
+\[
+I_j^{stat}>0.
+\]
+Thus the model does not give AI-excess stress merely because an asset is high beta. It gives AI-excess stress when the asset has AI co-movement above what its market beta explains.
+
+\subsection{Economic intensity}
+
+Statistical co-movement can be noisy. Public ETF histories may be short, proxy mappings may be imperfect, and some AI beneficiaries may not have enough return history. Therefore the model also uses an economic AI intensity score:
+\[
+I_j^{econ}\in[0,I_{max}].
+\]
+This score should be high for semiconductor supply chain, AI infrastructure, cloud, software monetization, data-center power, electrical equipment, and other areas with direct economic dependence on AI capex or AI adoption. It should be lower for industries with weak direct exposure.
+
+Economic scoring is not a replacement for return data. It is a stabilizer. It prevents the model from blindly trusting short, noisy, or proxy-contaminated return histories.
+
+\subsection{Blended intensity}
+
+The generic blended intensity is
+\[
+I_j^{pre}=w_{stat}I_j^{stat}+w_{econ}I_j^{econ},
+\]
+where
+\[
+w_{stat}+w_{econ}=1,
+\qquad w_{stat}\geq 0,
+\qquad w_{econ}\geq 0.
+\]
+The v5 implementation uses a roughly balanced but slightly economic-leaning blend:
+\[
+w_{stat}=0.45,
+\qquad w_{econ}=0.55.
+\]
+The reason is that the statistical layer captures realized market pricing, while the economic layer captures structural AI exposure that may not be fully visible in recent returns.
+
+The final intensity is bounded:
+\[
+I_j^{AI}=\min\{I_{max},\max\{0,I_j^{pre}\}\}.
+\]
+In v5, the maximum intensity is
+\[
+I_{max}=1.50.
+\]
+This upper bound prevents a noisy proxy regression from creating extreme stress exposure.
+
+\section{Country-industry cell construction}
+
+A client book may contain many securities without clean long return histories. Therefore the production vector maps a position to a country bucket $b$ and industry bucket $g$.
+
+The country bucket supplies local market and country-specific exposure. The industry bucket supplies sector structure. The cell-level stress object is $(b,g)$.
+
+\subsection{Market beta cell}
+
+Let $\beta_b^W$ be the country market beta and $\beta_g^W$ be the industry market beta. A simple additive or multiplicative rule can overstate the influence of the global industry proxy. v5 uses the country as the baseline and applies a moderated industry tilt:
+\[
+\beta_{b,g}^W
+=
+\beta_b^W(\beta_g^W)^{\lambda},
+\]
+where
+\[
+0\leq \lambda\leq 1.
+\]
+The v5 value is
+\[
+\lambda=0.50.
+\]
+This square-root tilt means the industry proxy matters, but it does not fully replace the country beta. This is important because a technology stock in Korea, Taiwan, Germany, or the United States should not be treated as identical merely because the industry label is similar.
+
+\subsection{AI co-movement cell}
+
+Similarly, the cell-level absolute AI co-movement uses the country as baseline and tilts by industry exposure:
+\[
+\theta_{b,g}^{abs}
+=
+\theta_b^{abs}\left({\theta_g^{abs}\over \theta_W^{abs}}\right)^{\lambda}.
+\]
+This says: start from the country index's AI co-movement, then adjust upward or downward depending on whether the industry is more or less AI-linked than the broad world reference.
+
+The cell statistical intensity is then
+\[
+I_{b,g}^{stat,raw}
+=
+{\theta_{b,g}^{abs}-\beta_{b,g}^W\theta_W^{abs}\over 1-\theta_W^{abs}},
+\]
+with the same non-negative clipping rule.
+
+\subsection{Cell economic intensity}
+
+Let $I_b^{econ}$ be country economic AI exposure and $I_g^{econ}$ be industry economic AI exposure. The cell economic score is
+\[
+I_{b,g}^{econ}=w_C I_b^{econ}+w_G I_g^{econ},
+\]
+where
+\[
+w_C+w_G=1.
+\]
+In v5,
+\[
+w_C=0.35,
+\qquad w_G=0.65.
+\]
+The industry receives more weight because AI exposure is more directly identified by business activity than by country alone. But country still matters because AI supply-chain concentration, electricity-market structure, semiconductor geography, and local index composition differ materially across regions.
+
+\section{Coherence projection}
+
+A stress vector should obey basic economic ordering constraints. For example, in a given country, technology hardware should generally not be less exposed to an AI unwind than the broad country index. Without a coherence rule, noisy return histories can violate this intuition.
+
+Let $I_b^{index}$ be the final AI-excess intensity for the broad country index. For explicitly AI-linked industries, v5 imposes the floor
+\[
+I_{b,g}^{AI}\geq I_b^{index}+m,
+\]
+where $m$ is a small monotonic margin. In v5,
+\[
+m=0.05.
+\]
+This floor is applied only when the industry economic AI score exceeds a threshold:
+\[
+I_g^{econ}\geq \tau.
+\]
+In v5,
+\[
+\tau=0.50.
+\]
+The projected intensity is therefore
+\[
+I_{b,g}^{AI}
+=
+\min\{I_{max},\max\{I_{b,g}^{pre}, I_b^{index}+m\}\}
+\]
+for explicitly AI-linked industries, and
+\[
+I_{b,g}^{AI}
+=
+\min\{I_{max},\max\{0,I_{b,g}^{pre}\}\}
+\]
+otherwise.
+
+\subsection*{Why this matters}
+
+This projection fixes a common failure mode of purely statistical models. A broad country ETF can look more AI-sensitive than a technology-hardware cell if the country ETF is dominated by a few AI-linked mega-cap constituents, if the industry proxy is noisy, or if the estimation window is short. A human reader will correctly see that as incoherent. The projection makes the model respect the economic hierarchy without hiding the raw diagnostics.
+
+\section{Scenario construction}
+
+The model separates exposure from severity. Exposure is represented by $\beta_j^W$ and $I_j^{AI}$. Severity is represented by $S_W^s$ and $S_{AI,X}^s$.
+
+The broad market shock is
+\[
+S_W^s.
+\]
+The AI-excess shock is
+\[
+S_{AI,X}^s=\kappa_s S_{AI,X}^{dotcom},
+\]
+where $S_{AI,X}^{dotcom}$ is the historical dot-com TMT excess drawdown relative to the market, and $\kappa_s$ is a scenario-specific severity scalar.
+
+The production stress formula becomes
+\[
+\widehat R_j^s
+=
+\beta_j^W S_W^s+I_j^{AI}\kappa_s S_{AI,X}^{dotcom}.
+\]
+
+\subsection{Mild, base, and severe}
+
+The scenario ladder is:
+\[
+\begin{array}{lll}
+\hbox{Mild} &:& S_W^{mild}=0.5S_W^{base},\quad \kappa_{mild}=0.5\kappa_{base},\\
+\hbox{Base} &:& S_W^{base}=S_W^{dotcom},\quad \kappa_{base}=\hbox{valuation-calibrated scalar},\\
+\hbox{Severe} &:& S_W^{severe}=S_W^{dotcom},\quad \kappa_{severe}=1.
+\end{array}
+\]
+The severe case keeps the full dot-com analogue for the AI-excess component. The base case keeps the market de-risking but scales the AI-excess component using valuation evidence. The mild case halves both the broad market and valuation-adjusted AI-excess stress.
+
+\section{Valuation severity scalar}
+
+Valuation data should calibrate shock size, not decide exposure. This is an important design choice. High valuation does not prove an industry has AI exposure. Conversely, low valuation does not prove no AI exposure. Exposure should come from returns and economic mapping. Valuation should answer a different question:
+\[
+\hbox{How much of the historical dot-com AI/TMT excess drawdown should be used in the base case?}
+\]
+
+Let $M_{AI,t}^m$ be an AI/TMT valuation multiple for metric $m$ at time $t$, and let $M_{MKT,t}^m$ be the corresponding market multiple. Define the log valuation premium
+\[
+P_t^m=\log M_{AI,t}^m-\log M_{MKT,t}^m.
+\]
+Let $P_{dotcom}$ be the dot-com reference premium and $P_{now}$ be the current AI/TMT premium. The raw severity scalar is
+\[
+\kappa_{raw}={P_{now}\over P_{dotcom}}.
+\]
+The production scalar is clipped:
+\[
+\kappa_{base}=\min\{1,\max\{0.5,\kappa_{raw}\}\}.
+\]
+The lower bound prevents the base stress from becoming too weak because of one valuation dataset. The upper bound prevents the base case from becoming more severe than the full dot-com analogue.
+
+In v5, the calibrated value is
+\[
+\kappa_{base}=0.671.
+\]
+This means the base case uses 67.1 percent of the dot-com AI/TMT excess drawdown, while the severe case uses 100 percent.
+
+\section{Why valuation is separated from exposure}
+
+The separation
+\[
+\widehat R_j^s=\beta_j^W S_W^s+I_j^{AI}\kappa_s S_{AI,X}^{dotcom}
+\]
+has an important advantage. It prevents circular reasoning.
+
+If valuation were used to define $I_j^{AI}$, then high-multiple industries would automatically receive high AI exposure even if their businesses were not truly AI-linked. That would confuse expensive assets with AI-exposed assets. In v5, return data and economic mapping determine $I_j^{AI}$. Valuation only determines $\kappa_s$, the severity of the AI-excess shock.
+
+This makes the model modular:
+\[
+\begin{array}{lll}
+\hbox{Return data} &\rightarrow& \hbox{market beta and AI co-movement;}\\
+\hbox{Economic mapping} &\rightarrow& \hbox{structural AI relevance;}\\
+\hbox{Valuation data} &\rightarrow& \hbox{base-case severity;}\\
+\hbox{Scenario design} &\rightarrow& \hbox{mild/base/severe stress vector.}
+\end{array}
+\]
+Each layer has one job.
+
+\section{Single-stock override theory}
+
+For selected AI epicenter stocks, the country-industry cell may be too coarse. The model therefore allows single-stock overrides. For a stock $i$, estimate or assign
+\[
+\beta_i^W,
+\qquad I_i^{AI}.
+\]
+The same stress formula applies:
+\[
+\widehat R_i^s
+=
+\beta_i^W S_W^s+I_i^{AI}\kappa_s S_{AI,X}^{dotcom}.
+\]
+This is important because a broad sector bucket cannot fully represent the risk of a stock such as a leading GPU, cloud, semiconductor, or AI infrastructure name. The override does not create a different theory. It applies the same theory at a more granular level.
+
+\section{Portfolio aggregation}
+
+Let $P_c$ be the set of positions for client $c$. Each position $i$ has signed market value $x_{c,i}$ and stress simple return $\widehat r_i^s$. The stressed P\&L is
+\[
+\mathrm{PnL}_{c,i}^s=-x_{c,i}\widehat r_i^s.
+\]
+The gross adverse loss is
+\[
+L_c^s=\sum_{i\in P_c}\max\{\mathrm{PnL}_{c,i}^s,0\}.
+\]
+If client-level margin is $M_c$, margin usage is
+\[
+U_c^s={L_c^s\over M_c}.
+\]
+This aggregation is deliberately simple. The purpose of the public research output is to produce a merge-ready stress vector. Confidential internal systems can then apply it to positions, margin, client identifiers, concentration limits, and liquidity overlays.
+
+\section{Risk interpretation}
+
+The model should be read as an adverse but coherent stress operator. It does not say that every asset must fall by the stressed amount in a real crash. It says that, for risk management, the primary vector should not give full benefit for relative rotations unless the desk explicitly chooses to model hedging benefits separately.
+
+The conservative convention is:
+\[
+\hbox{global equity loss is applied broadly, and AI-excess loss is added where exposure is present.}
+\]
+This is appropriate for a senior-management stress file because the model is designed to reveal vulnerability, not to optimize a relative-value trade.
+
+\section{Diagnostics and validation}
+
+A rigorous implementation should report the following diagnostics.
+
+\subsection{Orthogonality diagnostic}
+
+The residual AI factor should satisfy
+\[
+\langle f_{AI}^{res},r_W\rangle_T\approx 0.
+\]
+If this is not true, the residual factor was not constructed correctly.
+
+\subsection{Residual-beta diagnostic}
+
+The file should retain $\gamma_j^{res}$ for each country, industry, or stock where available. This allows reviewers to see which sectors behaved like AI-relative winners and laggards. It should not be the primary stress exposure.
+
+\subsection{No positive crash-return diagnostic}
+
+For in-scope equity cells, if $S_W^s\leq 0$, $S_{AI,X}^s\leq 0$, $\beta_j^W\geq 0$, and $I_j^{AI}\geq 0$, the model should not produce positive primary stress returns. If positive stress returns appear, they should be explained by short positions, non-equity assets, or explicit overrides, not by the primary equity vector itself.
+
+\subsection{Coherence diagnostic}
+
+For each country, explicitly AI-linked industry cells should generally be at least as severe as the broad country index:
+\[
+\widehat R_{b,g}^s\leq \widehat R_b^s
+\]
+for AI-linked $g$, after applying the monotonic projection. This is especially important for countries where the broad index has large AI constituent concentration.
+
+\subsection{Severity diagnostic}
+
+The report should show how much of the final base stress comes from the broad market component and how much comes from AI excess:
+\[
+\beta_j^W S_W^{base}
+\quad \hbox{versus} \quad
+I_j^{AI}\kappa_{base}S_{AI,X}^{dotcom}.
+\]
+This prevents the model from becoming a black box.
+
+\section{Why the theory is not overfitted}
+
+The model uses constraints because the data are imperfect. That is not a weakness; it is the right design for a risk stress model.
+
+A purely statistical model may look sophisticated, but it can fail basic economic checks. A purely judgmental model may be intuitive, but it can become arbitrary. The v5 structure combines both:
+\[
+\begin{array}{lll}
+\hbox{OLS/projection} &:& \hbox{separates market and AI-relative information;}\\
+\hbox{absolute beta adjustment} &:& \hbox{estimates AI co-movement above market;}\\
+\hbox{economic score} &:& \hbox{stabilizes noisy proxy data;}\\
+\hbox{non-negative clipping} &:& \hbox{prevents relative hedges from becoming crash gains;}\\
+\hbox{coherence projection} &:& \hbox{enforces obvious country-industry ordering;}\\
+\hbox{valuation scalar} &:& \hbox{calibrates base severity without redefining exposure.}
+\end{array}
+\]
+The model is therefore not trying to extract every detail from a short return sample. It uses return data where return data are useful, and uses economic constraints where pure regressions are unreliable.
+
+\section{Limitations}
+
+The model has several limitations.
+
+First, public ETF proxies are imperfect. A country ETF, industry ETF, or thematic ETF is not the same as every individual client position mapped to that bucket.
+
+Second, return histories for current AI assets may be short. A short sample can produce unstable betas, especially when the AI trade has been one of the dominant market themes.
+
+Third, the stress vector is linear in log-return components. Real crisis dynamics can be nonlinear because of liquidity, margin calls, crowding, dealer hedging, and feedback loops.
+
+Fourth, the model is conditional. It does not say an AI crash will happen. It says what stress vector to apply if the AI unwind scenario is chosen.
+
+Fifth, the no-benefit-credit rule is conservative. Some defensive sectors may outperform in a real AI rotation. The primary stress vector intentionally does not give full credit for that effect. A separate relative-value or hedging-benefit analysis can be layered on top, but it should not replace the adverse stress vector.
+
+\section{Summary of the theoretical position}
+
+The correct theory is not to abandon orthogonalization. The correct theory is to use it in the right place.
+
+Orthogonalization gives a clean relative AI diagnostic:
+\[
+f_{AI}^{res}=r_A-\widehat a_A-\widehat b_A r_W,
+\qquad \langle f_{AI}^{res},r_W\rangle_T=0.
+\]
+But production stress uses the absolute adverse operator:
+\[
+\widehat R_j^s=\beta_j^W S_W^s+I_j^{AI}\kappa_s S_{AI,X}^{dotcom}.
+\]
+The residual factor explains relative AI behavior. The market component explains broad de-risking. The AI-excess intensity explains incremental vulnerability to AI repricing. The valuation scalar calibrates the base-case severity. These pieces should be kept separate.
+
+That is the clean theoretical foundation for the v5 report.
+
+\section*{Appendix: mapping to v5 variables}
+
+The theory maps to the v5 production columns as follows.
+
+\[
+\begin{array}{lll}
+\hbox{Theoretical object} & \hbox{Meaning} & \hbox{v5-style variable}\\
+\hline
+\beta_j^W & \hbox{market-beta component} & \hbox{beta\_world\_cell or beta\_world\_stock}\\
+I_j^{AI} & \hbox{final AI-excess intensity} & \hbox{final\_ai\_excess\_intensity}\\
+S_W^s & \hbox{market shock} & \hbox{S\_WORLD\_log}\\
+S_{AI,X}^s & \hbox{AI-excess shock} & \hbox{S\_AI\_EXCESS\_log}\\
+\widehat R_j^s & \hbox{stress log return} & \hbox{scenario stress\_log}\\
+\exp(\widehat R_j^s)-1 & \hbox{stress simple return} & \hbox{scenario stress\_simple}\\
+\gamma_j^{res} & \hbox{residual AI diagnostic} & \hbox{residual AI beta diagnostic columns}
+\end{array}
+\]
+
+The production formula is
+\[
+\hbox{stress\_log\_return}
+=
+\hbox{beta\_world\_cell}\cdot S\_WORLD\_log
++
+\hbox{final\_ai\_excess\_intensity}\cdot S\_AI\_EXCESS\_log.
+\]
+The client P\&L formula is
+\[
+\hbox{stress\_pnl\_usd}
+=-\hbox{signed\_market\_value\_usd}\cdot \hbox{stress\_simple\_return}.
+\]
+
+\end{document}

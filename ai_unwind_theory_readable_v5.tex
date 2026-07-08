@@ -1,0 +1,690 @@
+\documentclass[10pt]{article}
+
+% Vanilla LaTeX source. No geometry, amsmath, amssymb, hyperref,
+% booktabs, array, minted, shell escape, latexmk, or Perl-dependent workflow.
+% Compile with: pdflatex ai_unwind_theory_readable_v5.tex
+% Compile twice if you want the table of contents page numbers updated.
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}
+\setlength{\emergencystretch}{3em}
+\sloppy
+
+\title{AI Unwind Stress Framework: Theory Note}
+\author{Alex Zhang}
+\date{July 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This note explains the theory behind the AI unwind stress framework in plain language. The main model idea is simple: a stock, country, or industry can fall for two different reasons. First, the whole equity market can de-risk. Second, the AI theme itself can be repriced. The framework therefore writes total stress as a market component plus an AI-excess component.
+
+The note is theory-only. It does not try to rebuild the code, reproduce the output files, or defend every empirical proxy. Its job is to make the logic clear: why we separate market risk from AI-excess risk, why orthogonalization is useful but not the final crash return, why negative residual beta should not be treated as a gain in an absolute crash, why valuation only scales the AI-excess part, and why we need a coherence rule so that explicitly AI-linked buckets do not look less stressed than broad country indices.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+\section{The one-sentence model}
+
+The whole framework can be summarized in one sentence:
+
+\begin{center}
+\fbox{\parbox{0.86\linewidth}{Total stress equals broad market de-risking plus AI-excess repricing.}}
+\end{center}
+
+In formula form, for a country-industry bucket $(b,g)$ under scenario $s$,
+\[
+\widehat R_{b,g}^{s}=\beta_{b,g}^{W}S_W^s+I_{b,g}^{AI}S_{AI}^s.
+\]
+
+Each term has a simple meaning:
+
+\begin{center}
+\begin{tabular}{ll}
+$\widehat R_{b,g}^{s}$ & final stress return for bucket $(b,g)$ in scenario $s$ \\
+$S_W^s$ & broad world equity shock in scenario $s$ \\
+$S_{AI}^s$ & extra AI-theme shock in scenario $s$ \\
+$\beta_{b,g}^{W}$ & sensitivity of the bucket to the world market \\
+$I_{b,g}^{AI}$ & extra AI vulnerability after removing ordinary market exposure
+\end{tabular}
+\end{center}
+
+This is not a normal return forecast. It is not saying what the exact price will be next week or next month. It is a stress map. It answers:
+
+\begin{center}
+\fbox{\parbox{0.86\linewidth}{If an AI-led unwind happens, which buckets should lose more, which should lose less, and why?}}
+\end{center}
+
+That distinction matters. A stress model is allowed to be conditional. It says: suppose the bad state happens, then what is the plausible peak-to-trough shock? It does not say the bad state must happen by a fixed date.
+
+\section{Why one shock is not enough}
+
+A naive model might apply the same AI-bubble crash number to everything. For example, it might say: ``AI bubble bursts, therefore every equity position gets shocked by $-40\%$.'' That is simple, but it is wrong.
+
+A broad index, a semiconductor name, a cloud software company, a utility, and an oil major are not the same object. They can all fall in the same market selloff, but they should not all receive the same AI-specific punishment.
+
+A better model needs two channels.
+
+\subsection{Channel 1: market de-risking}
+
+When a large equity theme breaks, investors often sell risk more generally. Portfolios reduce gross exposure, hedge funds cut leverage, retail flows reverse, and volatility rises. This affects much more than the bubble theme itself.
+
+That is the market channel. In the model it is:
+\[
+\beta_{b,g}^{W}S_W^s.
+\]
+
+A high-beta bucket gets hit harder by the same world selloff. A low-beta bucket gets hit less. This is the part of the drawdown that is not unique to AI.
+
+\subsection{Channel 2: AI-excess repricing}
+
+Some assets have an additional exposure because they benefited directly from the AI narrative. Examples include semiconductors, AI servers, cloud infrastructure, data-center power equipment, selected software names, and certain single-stock epicenter names.
+
+That is the AI-excess channel:
+\[
+I_{b,g}^{AI}S_{AI}^s.
+\]
+
+Here $I_{b,g}^{AI}$ says how much extra AI vulnerability the bucket has. A pure broad-market asset should have low $I^{AI}$. An AI epicenter stock should have high $I^{AI}$.
+
+\subsection{Why the split matters}
+
+The split prevents two errors.
+
+First, it prevents under-stressing AI names. If a country or industry is directly tied to the AI boom, it should receive both the market shock and the AI-excess shock.
+
+Second, it prevents over-stressing non-AI names. A bank, utility, or energy company may fall in a market unwind, but it should not automatically receive the same theme-specific shock as an AI semiconductor stock.
+
+So the model is not trying to be fancy. It is trying to avoid mixing two different economic reasons for losing money.
+
+\section{A small toy example}
+
+Suppose the base scenario has:
+\[
+S_W=-20\%, \qquad S_{AI}=-40\%.
+\]
+
+Now compare three buckets.
+
+\begin{center}
+\begin{tabular}{lccc}
+Bucket & Market beta & AI intensity & Stress return \\
+Broad market index & $1.0$ & $0.0$ & $-20\%$ \\
+AI hardware & $1.2$ & $0.8$ & $-56\%$ \\
+Defensive utility & $0.6$ & $0.2$ & $-20\%$
+\end{tabular}
+\end{center}
+
+The calculations are:
+\[
+\mbox{Broad index: } 1.0(-20\%)+0.0(-40\%)=-20\%.
+\]
+\[
+\mbox{AI hardware: } 1.2(-20\%)+0.8(-40\%)=-24\%-32\%=-56\%.
+\]
+\[
+\mbox{Utility: } 0.6(-20\%)+0.2(-40\%)=-12\%-8\%=-20\%.
+\]
+
+The point is not the exact numbers. The point is the ordering. AI hardware should be hit harder than the broad index. The utility may still fall, but mostly because the whole market falls, not because it is the center of the AI bubble.
+
+This is the intuition behind the full model.
+
+\section{Terminal shock, not a dated forecast}
+
+The model's drawdown number is a terminal stress shock. It is best read as a peak-to-trough scenario loss.
+
+For example, if a bucket has base stress $-50\%$, the correct interpretation is:
+
+\begin{center}
+\fbox{\parbox{0.86\linewidth}{Under the base AI-unwind scenario, the bucket is assigned a full-scenario loss of $50\%$.}}
+\end{center}
+
+It does not automatically mean $-50\%$ in three months, six months, or one year. The cross-sectional model answers ``who gets hit more?'' It does not by itself answer ``how fast does the hit arrive?''
+
+If timing is needed, we add a separate path function. Let $T$ be the assumed unwind horizon and let $h(t;T)$ be the fraction of the terminal shock that has occurred by time $t$:
+\[
+0\leq h(t;T)\leq 1, \qquad h(0;T)=0, \qquad h(T;T)=1.
+\]
+
+Then the time-path version is:
+\[
+\widehat R_i^s(t)=h(t;T)\widehat R_i^s.
+\]
+
+This separates two questions:
+
+\begin{center}
+\begin{tabular}{ll}
+Cross-sectional severity & How large is the full scenario loss? \\
+Time path & How quickly does that loss arrive?
+\end{tabular}
+\end{center}
+
+That separation is important because a fast unwind and a slow unwind can have the same peak-to-trough loss but very different liquidity and margin implications.
+
+\section{The main identification problem}
+
+The difficult part is not writing the final equation. The difficult part is estimating $I^{AI}$ without cheating.
+
+The naive idea is to regress each bucket directly on an AI basket and call the beta ``AI exposure.'' But that overstates AI exposure because the AI basket itself has ordinary market exposure.
+
+For example, suppose a country ETF moves strongly with the AI basket. That may happen for two reasons:
+
+\begin{enumerate}
+\item The country is truly AI-linked.
+\item The country simply has high equity beta, and the AI basket also has high equity beta.
+\end{enumerate}
+
+If we fail to separate these two reasons, we double-count market risk. The model would first shock the bucket through $\beta^W S_W$, and then shock it again through an ``AI beta'' that partly contains the same market exposure. That is exactly what the model is designed to avoid.
+
+So the core identification problem is:
+
+\begin{center}
+\fbox{\parbox{0.86\linewidth}{How do we measure AI-excess vulnerability without mistaking ordinary market beta for AI exposure?}}
+\end{center}
+
+\section{Orthogonalization: the clean idea}
+
+Orthogonalization is a way to separate what is common from what is incremental.
+
+Imagine two return series:
+
+\begin{itemize}
+\item $r_W$, the world market return.
+\item $r_A$, the AI basket return.
+\end{itemize}
+
+The AI basket moves partly because the market moves. To isolate the AI-specific part, regress AI returns on world returns:
+\[
+r_A=a+\theta_W r_W+u_A.
+\]
+
+The fitted part $a+\theta_W r_W$ is the part of AI returns explained by the market. The residual $u_A$ is the leftover AI move after removing the market.
+
+That residual is the orthogonalized AI factor. In words:
+
+\begin{center}
+\fbox{\parbox{0.86\linewidth}{Orthogonalized AI means AI performance after stripping out ordinary world-market movement.}}
+\end{center}
+
+Now regress a bucket return $r_y$ on the market and the residual AI factor:
+\[
+r_y=c+\beta_y^W r_W+\gamma_y u_A+e_y.
+\]
+
+Here $\gamma_y$ is useful because it tells us whether the bucket tends to outperform or underperform when AI outperforms the market.
+
+This is very helpful diagnostically. It helps answer: ``Is this bucket really connected to the AI theme, or is it just high beta?''
+
+\section{Why residual beta is not the final crash exposure}
+
+Orthogonalization is useful, but it can be misused.
+
+A residual AI beta is a relative-performance statistic. It says how a bucket behaves compared with the market when AI beats or lags the market. It does not directly say the bucket's absolute return in a crash.
+
+This is easiest to see with an example.
+
+Suppose a defensive utility has negative residual AI beta. That means when AI strongly outperforms the market, the utility may lag. When AI underperforms the market, the utility may outperform.
+
+But ``outperform'' does not mean ``go up.'' In a crash, the utility can outperform AI and still fall.
+
+For example:
+
+\begin{center}
+\begin{tabular}{lcc}
+Asset & Return in AI crash & Relative result \\
+AI basket & $-50\%$ & worse \\
+Utility & $-15\%$ & better
+\end{tabular}
+\end{center}
+
+The utility has outperformed by $35\%$, but it still lost money. Therefore, negative residual AI beta should not be treated as an absolute positive stress return.
+
+This is the key reason the production model does not simply plug residual beta into the crash equation. Residual beta is a diagnostic. The final stress model uses a no-benefit-credit AI-excess intensity.
+
+In plain English:
+
+\begin{center}
+\fbox{\parbox{0.86\linewidth}{A bucket can benefit relative to AI during an AI unwind, but that does not mean it should profit in absolute terms during a broad equity selloff.}}
+\end{center}
+
+\section{From absolute AI beta to AI-excess intensity}
+
+The production model uses a simpler and safer decomposition.
+
+Let $\theta_y$ be the observed absolute beta of bucket $y$ to the AI basket. This raw number contains two pieces:
+
+\begin{enumerate}
+\item ordinary market exposure, and
+\item true AI-excess exposure.
+\end{enumerate}
+
+Let $\theta_W$ be the world market's beta to the AI basket. If bucket $y$ has world beta $\beta_y^W$, then the part of its AI co-movement explained by ordinary market exposure is approximately:
+\[
+\beta_y^W\theta_W.
+\]
+
+So the raw AI beta can be approximated as:
+\[
+\theta_y \approx \beta_y^W\theta_W+I_y^{AI}(1-\theta_W).
+\]
+
+Solving for $I_y^{AI}$ gives:
+\[
+I_y^{stat}=\frac{\theta_y-\beta_y^W\theta_W}{1-\theta_W}.
+\]
+
+Then the model clips this value:
+\[
+I_y^{stat}=\mbox{clip}\left(\frac{\theta_y-\beta_y^W\theta_W}{1-\theta_W},0,I_{max}\right).
+\]
+
+This formula is the heart of the theory.
+
+It says: start with observed AI co-movement, subtract the amount explained by market beta, and keep only the remaining AI-excess piece. If the remaining piece is negative, set it to zero for production stress purposes. The bucket may be a relative outperformer, but we do not give it an AI-crash profit credit in the main loss vector.
+
+\section{Why clipping is necessary}
+
+Clipping looks mechanical, but it has an economic purpose.
+
+There are two bounds.
+
+The lower bound is zero:
+\[
+I_y^{stat}\geq 0.
+\]
+
+This means the production stress model does not allow negative AI-excess intensity. If a bucket is not AI-exposed, it receives zero AI-excess shock. It can still lose money through the market channel.
+
+The upper bound is $I_{max}$:
+\[
+I_y^{stat}\leq I_{max}.
+\]
+
+This prevents noisy regressions or short histories from generating absurd exposures. ETF proxies are imperfect. Some countries have limited data. Some industries are represented by broad global proxies. A cap prevents a single unstable estimate from dominating the stress vector.
+
+The clipping rule is not a claim that exposures are literally bounded by nature. It is a risk-modeling discipline. It makes the stress vector more robust.
+
+\section{Statistical evidence plus economic relevance}
+
+The model should not rely only on regressions. A regression can be noisy, especially when the proxy is imperfect or the history is short. At the same time, the model should not rely only on subjective labels. A purely subjective model can become arbitrary.
+
+The solution is to blend both:
+\[
+I_{b,g}^{AI}=w_{stat}I_{b,g}^{stat}+w_{econ}I_{b,g}^{econ}.
+\]
+
+The statistical component asks:
+
+\begin{center}
+\fbox{\parbox{0.86\linewidth}{Has this bucket historically moved like an AI-exposed asset after adjusting for market beta?}}
+\end{center}
+
+The economic component asks:
+
+\begin{center}
+\fbox{\parbox{0.86\linewidth}{Does this bucket have a real business-channel connection to the AI boom?}}
+\end{center}
+
+Both questions matter.
+
+For example, semiconductors should receive high economic AI relevance even if a short regression window is noisy. A defensive sector should not receive high economic AI relevance just because it had a temporary correlation with the AI basket.
+
+The economic component can be built from country relevance and industry relevance:
+\[
+I_{b,g}^{econ}=0.35I_b^{econ}+0.65I_g^{econ}.
+\]
+
+The industry weight is larger because the industry label usually says more about AI transmission than the country label. But country still matters. Taiwan, Korea, the United States, Japan, China, and the Netherlands do not have the same AI supply-chain exposure.
+
+\section{Country-industry cells: why we need them}
+
+In an ideal world, every single stock would have long, clean, reliable return history and perfect industry classification. Then we could estimate every stock separately.
+
+In reality, global portfolios often contain positions where individual stock data are unavailable, noisy, stale, or hard to map. The model therefore needs a country-industry layer.
+
+A position is mapped to a country bucket $b$ and an industry bucket $g$. The model then builds a stress return for that cell.
+
+This solves a practical problem:
+
+\begin{center}
+\fbox{\parbox{0.86\linewidth}{The model must work even when the only reliable inputs are country, industry, and position size.}}
+\end{center}
+
+The country gives a baseline. The industry gives a tilt.
+
+The cell market beta is:
+\[
+\beta_{b,g}^{W}=\beta_b^W(\beta_g^W)^{\lambda}.
+\]
+
+The cell absolute AI beta is:
+\[
+\theta_{b,g}=\theta_b\left(\frac{\theta_g}{\theta_W}\right)^{\lambda}.
+\]
+
+The parameter $\lambda$ controls how strongly the global industry proxy tilts the country baseline. In the v5 framework, $\lambda=0.50$. This is a square-root tilt.
+
+The reason for a square-root tilt is conservatism. A global industry ETF is informative, but it is not a perfect proxy for every local industry sleeve. A full tilt would over-trust the industry proxy. No tilt would ignore useful information. A square-root tilt is the middle ground.
+
+\section{Why the broad index row is treated differently}
+
+A broad country index row is not an industry. It is the country market itself.
+
+So for broad index or ETF rows, the model does not apply an industry tilt:
+\[
+\beta_{b,index}^{W}=\beta_b^W,
+\]
+\[
+I_{b,index}^{AI}=I_b^{AI}.
+\]
+
+This keeps the broad country row interpretable. It means Korea broad index is Korea broad index, not Korea plus an arbitrary global industry overlay.
+
+This matters because some broad country indices are already technology-heavy. Korea and Taiwan, for example, can have meaningful AI exposure at the broad index level. But the broad index is still not the same as the explicit technology hardware bucket.
+
+\section{The coherence projection}
+
+Proxy arithmetic can sometimes produce strange rankings. For example, a broad country ETF might look more AI-exposed than that same country's technology hardware bucket. That is usually not economically coherent in an AI-specific unwind.
+
+The model therefore applies a coherence projection. For explicitly AI-linked industries:
+\[
+I_{b,g}^{AI}\geq I_{b,index}^{AI}+0.05.
+\]
+
+This rule is not a forecast. It is a consistency condition.
+
+It says: if the scenario is specifically about AI repricing, then the explicit AI-linked sleeve should not be less AI-sensitive than the broad country index. The broad index may be technology-heavy, but the direct technology hardware bucket should still be at least as exposed to the AI-excess shock.
+
+This is similar to checking that a model respects common sense. If a model says Korea broad equities are hit harder by AI-excess repricing than Korea technology hardware, the model may be mathematically calculated but economically suspicious.
+
+The projection fixes this type of issue without changing the whole framework.
+
+\section{Shock calibration: why valuation scales AI-excess only}
+
+The historical shock anchor is the dot-com TMT unwind. But the model should not blindly impose the full dot-com shock as the base case. Today's AI premium may be smaller, larger, or differently distributed than the dot-com premium.
+
+The valuation scalar $\kappa$ controls how much of the dot-com AI/TMT-excess shock is used in the base case:
+\[
+\kappa_{base}=\mbox{clip}\left(\frac{P_{now}^{AI}}{P_{2000}^{TMT}},0.50,1.00\right).
+\]
+
+Here:
+
+\begin{center}
+\begin{tabular}{ll}
+$P_{now}^{AI}$ & current AI/TMT valuation premium versus market \\
+$P_{2000}^{TMT}$ & dot-com reference valuation premium versus market \\
+$\kappa_{base}$ & fraction of dot-com AI-excess severity used in base case
+\end{tabular}
+\end{center}
+
+The important point is that $\kappa$ scales the AI-excess component, not the world market component.
+
+Why? Because broad market de-risking can happen even if the AI valuation premium is not identical to the dot-com premium. If investors reduce risk, sell equities, and cut leverage, that affects the whole market. The severity of that market de-risking is not only a function of AI sector valuation.
+
+So the model keeps the world shock separately calibrated and uses valuation to decide how much incremental AI-theme repricing is appropriate.
+
+In simple terms:
+
+\begin{center}
+\begin{tabular}{ll}
+Market shock & how much the whole equity market falls \\
+AI-excess shock & how much extra the AI theme is repriced \\
+Valuation scalar & how much of the dot-com AI-excess replay is justified
+\end{tabular}
+\end{center}
+
+\section{Mild, base, and severe scenarios}
+
+The scenario set should not be a single number. A single number creates false precision. Instead, the framework uses a small set of coherent states.
+
+\subsection{Mild}
+
+The mild case is a partial unwind. It is useful for asking: what happens if the AI trade cools down but does not fully break?
+
+It has a smaller market shock and a smaller AI-excess shock.
+
+\subsection{Base}
+
+The base case is the main working scenario. It uses a valuation-calibrated AI-excess shock. It is not a full dot-com replay, but it is not a harmless correction either.
+
+This is the central use case for risk management: large enough to matter, but not automatically the worst conceivable case.
+
+\subsection{Severe}
+
+The severe case keeps the full dot-com-style AI/TMT-excess analogue. This is important because the model should not discard the historical analogue. It should reserve it for a severe state.
+
+This gives a clean interpretation:
+
+\begin{center}
+\begin{tabular}{ll}
+Mild & partial unwind \\
+Base & valuation-adjusted serious unwind \\
+Severe & full historical analogue replay
+\end{tabular}
+\end{center}
+
+\section{Single-stock overrides}
+
+The country-industry vector is the default model. But some AI epicenter names are too concentrated to be represented well by a broad bucket.
+
+For those names, the model uses the same theoretical equation:
+\[
+\widehat R_i^s=\beta_i^W S_W^s+I_i^{AI}S_{AI}^s.
+\]
+
+The difference is that $\beta_i^W$ and $I_i^{AI}$ are estimated at the single-stock level where possible.
+
+This avoids two problems.
+
+First, it avoids understating single-stock concentration. A company like a major AI chip leader can be much more AI-sensitive than the average technology hardware bucket.
+
+Second, it avoids making every stock in the same bucket equally extreme. A broad hardware bucket and a true AI epicenter name are related, but they are not identical.
+
+The override is therefore not a separate theory. It is the same theory applied at a more granular level.
+
+\section{Portfolio loss mapping}
+
+Once each position has a stress return, loss mapping is simple.
+
+Let $x_i$ be signed market value. Long positions have positive $x_i$. Short positions have negative $x_i$.
+
+The stress loss is:
+\[
+\widehat L_i^s=-x_i\widehat R_i^s.
+\]
+
+For a long position, if $\widehat R_i^s$ is negative, the loss is positive. For a short position, the same negative return produces a gain.
+
+Example:
+
+\begin{center}
+\begin{tabular}{lccc}
+Position & Signed value & Stress return & Stress loss \\
+Long stock & $+100$ & $-30\%$ & $+30$ \\
+Short stock & $-100$ & $-30\%$ & $-30$
+\end{tabular}
+\end{center}
+
+This is the natural mark-to-market convention. If the risk manager wants an adverse-only convention for shorts, that is a separate overlay. It should not be hidden inside the factor model.
+
+\section{Liquidity and market-cap overlays}
+
+Market capitalization should not change the factor shock by itself.
+
+A small company is not automatically more overvalued than a large company. Market cap is size, not valuation. To make a valuation argument, we would need price-to-earnings, enterprise-value-to-sales, free-cash-flow yield, or similar fundamentals.
+
+However, market cap can matter for liquidity and gap risk. Smaller names may be harder to exit, may gap more when liquidity disappears, and may have wider bid-ask spreads in stress.
+
+Therefore, the clean theoretical order is:
+
+\begin{enumerate}
+\item Compute factor stress from market and AI-excess channels.
+\item Convert factor stress into position P\&L.
+\item Apply any liquidity or gap-risk overlay after the factor loss.
+\end{enumerate}
+
+This avoids confusing three different ideas:
+
+\begin{center}
+\begin{tabular}{ll}
+Factor risk & exposure to market and AI repricing \\
+Valuation risk & whether the asset is expensive relative to fundamentals \\
+Liquidity risk & whether the position can be exited under stress
+\end{tabular}
+\end{center}
+
+\section{What the model deliberately does not do}
+
+A good stress model should be clear about what it is not doing.
+
+\subsection{It is not a point forecast}
+
+The model does not say the AI unwind must happen. It does not predict the exact date of a peak, the exact date of a trough, or the exact path between them.
+
+It gives conditional scenario losses.
+
+\subsection{It is not a full fundamental valuation model}
+
+The framework uses valuation to scale AI-excess severity, but it does not estimate intrinsic value for every stock. That would require earnings forecasts, margin assumptions, discount rates, terminal growth, and company-specific fundamentals.
+
+The goal here is not single-stock fair value. The goal is a coherent cross-sectional stress vector.
+
+\subsection{It is not pure historical beta}
+
+Historical beta is useful, but the model does not blindly trust it. It adjusts AI co-movement for market exposure, blends statistical and economic evidence, clips unstable values, and applies coherence checks.
+
+\subsection{It is not an options model}
+
+The model is about underlying equity stress returns. It does not model implied volatility, skew, convexity, delta-gamma effects, or option exercise behavior. Those can be layered on later if the portfolio contains derivatives.
+
+\section{Why this theory is rigorous enough}
+
+The model is rigorous because each step has a clear reason.
+
+\begin{center}
+\begin{tabular}{p{0.32\linewidth}p{0.52\linewidth}}
+Step & Reason \\
+Separate market and AI shocks & Avoid mixing common risk with theme risk. \\
+Estimate market beta & Scale broad de-risking by market sensitivity. \\
+Adjust AI beta for market beta & Avoid double-counting the same market exposure. \\
+Clip AI intensity & Prevent negative crash credit and unstable extremes. \\
+Blend statistical and economic relevance & Reduce over-reliance on noisy regressions. \\
+Use country-industry cells & Make the model usable for global position data. \\
+Apply coherence projection & Enforce economically sensible rankings. \\
+Use valuation scalar & Avoid blindly applying full dot-com severity as base. \\
+Keep severe scenario & Preserve the full historical analogue as tail case.
+\end{tabular}
+\end{center}
+
+This is not mathematical decoration. Every modeling choice is there to prevent a specific failure mode.
+
+\section{The most important intuition}
+
+The most important intuition is the difference between absolute loss and relative performance.
+
+Orthogonalization tells us about relative AI exposure after removing the market. That is useful. But the stress vector needs absolute loss under a bad market state.
+
+So the model uses orthogonalization-style logic to identify AI-excess exposure, but it does not let negative residual exposure become an absolute profit assumption.
+
+In one sentence:
+
+\begin{center}
+\fbox{\parbox{0.86\linewidth}{The model uses residual logic to avoid double-counting, but uses non-negative AI-excess intensity to produce realistic absolute crash losses.}}
+\end{center}
+
+That is the clean bridge between theory and implementation.
+
+\section{Recommended wording for the full report}
+
+A concise theory paragraph for the main report could read as follows:
+
+\begin{quote}
+The framework treats an AI unwind as the sum of two conceptually distinct shocks: broad market de-risking and AI-excess repricing. The market component is applied through each bucket's world beta. The AI-excess component is applied through a non-negative AI intensity that removes the part of AI co-movement explained by ordinary market exposure. Orthogonalized AI betas are retained as diagnostics of relative rotation, but they are not used directly as absolute crash returns, because a negative residual beta means relative outperformance, not an absolute gain in a broad selloff. The resulting vector is a terminal scenario stress map, not a dated return forecast. If timing is required, a separate path function should allocate the terminal shock across a chosen unwind horizon.
+\end{quote}
+
+This paragraph captures the theory without overcomplicating the main report.
+
+\section{Checklist for explaining the model orally}
+
+If you need to explain the theory quickly, use this order.
+
+\begin{enumerate}
+\item Start with the problem: we need a coherent AI unwind stress vector across countries, industries, and selected stocks.
+\item Say why one shock is wrong: AI hardware, broad indices, utilities, and banks should not all get the same drawdown.
+\item Introduce the split: total stress equals market de-risking plus AI-excess repricing.
+\item Explain beta: market beta controls how much the bucket falls with the world market.
+\item Explain AI intensity: AI intensity controls how much extra the bucket falls because the AI theme reprices.
+\item Explain orthogonalization: it removes ordinary market movement from AI movement, so we do not double-count market risk.
+\item Explain the key caution: residual beta is relative, not absolute. Negative residual beta does not mean a stock goes up in a crash.
+\item Explain valuation scaling: valuation scales the AI-excess shock, not the market shock.
+\item Explain coherence: explicitly AI-linked industries should not be less stressed than the broad country index in an AI-specific unwind.
+\item Explain horizon: current output is a terminal stress loss; timing requires a separate path function.
+\end{enumerate}
+
+\section{Conclusion}
+
+The theory is simple but strict. An AI unwind is not just a market crash and not just a sector crash. It is both: a broad de-risking event plus a theme-specific repricing event.
+
+The model's main equation reflects that structure:
+\[
+\widehat R_{b,g}^{s}=\beta_{b,g}^{W}S_W^s+I_{b,g}^{AI}S_{AI}^s.
+\]
+
+Everything else exists to make this equation usable and defensible: orthogonalization prevents double-counting, non-negative AI intensity prevents false crash gains, valuation scaling avoids blindly replaying dot-com as the base case, and coherence projection keeps the cross-sectional ranking economically sensible.
+
+The output should therefore be read as a terminal scenario stress vector. It is a map of vulnerability under an AI-led unwind, not a calendar-dated prediction.
+
+\newpage
+\section*{Plain-English symbol dictionary}
+\addcontentsline{toc}{section}{Plain-English symbol dictionary}
+
+\begin{center}
+\begin{tabular}{ll}
+Symbol & Meaning \\
+$W$ & world equity market \\
+$AI$ & AI theme or AI basket \\
+$b$ & country or regional bucket \\
+$g$ & industry bucket \\
+$i$ & single stock or position \\
+$s$ & stress scenario, such as mild, base, or severe \\
+$r_W$ & realized world market return \\
+$r_A$ & realized AI basket return \\
+$u_A$ & AI return after removing market movement \\
+$\beta^W$ & sensitivity to world market returns \\
+$\theta$ & raw absolute co-movement with the AI basket \\
+$I^{AI}$ & final AI-excess stress intensity \\
+$I^{stat}$ & statistically estimated AI-excess intensity \\
+$I^{econ}$ & economically assigned AI relevance \\
+$S_W^s$ & world market shock in scenario $s$ \\
+$S_{AI}^s$ & AI-excess shock in scenario $s$ \\
+$\kappa$ & valuation severity scalar \\
+$\widehat R^s$ & scenario stress return \\
+$\widehat L^s$ & scenario stress loss \\
+$x_i$ & signed market value of position $i$ \\
+$h(t;T)$ & fraction of terminal stress realized by time $t$
+\end{tabular}
+\end{center}
+
+\section*{References and anchors}
+\addcontentsline{toc}{section}{References and anchors}
+
+This theory note is meant to support the AI unwind v5 stress framework. The main empirical report uses a dot-com TMT unwind analogue, Damodaran industry valuation data, country and industry ETF proxies, a valuation-calibrated AI-excess base case, and a severe case that retains the full dot-com analogue.
+
+Conceptually relevant references include:
+
+\begin{enumerate}
+\item Barberis, Greenwood, Jin, and Shleifer, ``Extrapolation and Bubbles.''
+\item Greenwood, Shleifer, and You, ``Bubbles for Fama.''
+\item Heston and Rouwenhorst, ``Does Industrial Structure Explain the Benefits of International Diversification?''
+\item Griffin and Karolyi, ``Another Look at the Role of the Industrial Structure of Markets for International Diversification Strategies.''
+\item Ofek and Richardson, ``DotCom Mania: The Rise and Fall of Internet Stock Prices.''
+\item Newey and West, ``A Simple, Positive Semi-definite, Heteroskedasticity and Autocorrelation Consistent Covariance Matrix.''
+\item Damodaran industry valuation datasets and historical archives.
+\end{enumerate}
+
+\end{document}
